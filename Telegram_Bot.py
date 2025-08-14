@@ -9,6 +9,7 @@ import jdatetime
 from flask import Flask, request
 import telegram
 #----------------------------------------------------------------------------------------------
+app = Flask(__name__)
 DATA_FILE = "notes.json"
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 bot=telebot.TeleBot(TOKEN)
@@ -567,6 +568,38 @@ def reset_daily(message):
     except Exception as e:
         print(f"❌ خطا در ریست کردن تسک های روزانه برای ")
 
-bot.polling()
+# تغییرات اصلی در بخش اجرا:
+@app.route('/' + TOKEN, methods=['POST'])
+def webhook():
+    if request.headers.get('content-type') == 'application/json':
+        json_string = request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return ''
+    return 'Bad request', 400
+
+def run_flask():
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
+if __name__ == '__main__':
+    # حذف وب‌هوک قبلی (اگر وجود داشت)
+    bot.remove_webhook()
+    time.sleep(1)
+    
+    # تنظیم وب‌هوک جدید
+    WEBHOOK_URL = f'https://YOUR_RENDER_URL.onrender.com/{TOKEN}'
+    bot.set_webhook(url=WEBHOOK_URL)
+    
+    # شروع threadهای کمکی
+    reminder_thread = threading.Thread(target=reminder_loop)
+    reminder_thread.daemon = True
+    reminder_thread.start()
+    
+    daily_thread = threading.Thread(target=daily_loop)
+    daily_thread.daemon = True
+    daily_thread.start()
+    
+    # اجرای سرور Flask در thread اصلی
+    run_flask()
 
 
