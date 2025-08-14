@@ -24,20 +24,23 @@ class Task:
         self.deaddate=deaddate
         self.done_time = None  # زمان انجام شدن
         if deaddate != "امشب ساعت 24:00":
-            try:
-                if deaddate.strip().startswith("14"):
-                    # 👇 فرض می‌کنیم فرمت ورودی شمسیه: YYYY/MM/DD HH:MM
-                    jalali_dt = jdatetime.datetime.strptime(deaddate, "%Y/%m/%d %H:%M")
-                    self.deaddate = jalali_dt.strftime("%Y/%m/%d %H:%M")  # بدون تبدیل
-                else:
-                    # 👇 فرض بر اینکه فرمت میلادیه: YYYY-MM-DD HH:MM
-                    gregorian_dt = datetime.strptime(deaddate, "%Y/%m/%d %H:%M")
-                    gregorian_dt = gregorian_dt.replace(tzinfo=ZoneInfo("Asia/Tehran"))
-                    jalali_dt = jdatetime.datetime.fromgregorian(datetime=gregorian_dt)
-                    self.deaddate = jalali_dt.strftime("%Y/%m/%d %H:%M")
-            except Exception as e:
+            
+            if deaddate.strip().startswith("14"):
+                # 👇 فرض می‌کنیم فرمت ورودی شمسیه: YYYY/MM/DD HH:MM
+                jalali_dt = jdatetime.datetime.strptime(deaddate, "%Y/%m/%d %H:%M")
+                self.deaddate = jalali_dt.strftime("%Y/%m/%d %H:%M")  # بدون تبدیل
+            if deaddate.strip().startswith("20"):
+                # 👇 فرض بر اینکه فرمت میلادیه: YYYY-MM-DD HH:MM
+                gregorian_dt = datetime.strptime(deaddate, "%Y/%m/%d %H:%M")
+                gregorian_dt = gregorian_dt.replace(tzinfo=ZoneInfo("Asia/Tehran"))
+                jalali_dt = jdatetime.datetime.fromgregorian(datetime=gregorian_dt)
+                self.deaddate = jalali_dt.strftime("%Y/%m/%d %H:%M")
+            else: 
                 if "موعد تویحل وارده صحیح نبوده" in deaddate:
                     self.deaddate = deaddate + "    "+ ":فرمت موعد تویحل وارده صحیح نبوده و با فرمت معمولی ذخیره شده فرمت درست\n YYYY/MM/DD HH:MM میباشد"  # اگر خطا باشه، همون ورودی ذخیره می‌شه
+                else:
+                    self.deaddate=deaddate
+    
     def to_dict(self):
         return {
             "component": self.component,
