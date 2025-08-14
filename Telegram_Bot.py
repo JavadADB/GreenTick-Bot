@@ -6,6 +6,8 @@ import json
 import os
 import threading
 import jdatetime
+from flask import Flask, request
+import telegram
 #----------------------------------------------------------------------------------------------
 DATA_FILE = "notes.json"
 API_KEY="7907189917:AAHl9-VZggOEel72TLaF8faPlJd_Xq1Th6I"
@@ -566,3 +568,4 @@ def reset_daily(message):
         print(f"❌ خطا در ریست کردن تسک های روزانه برای ")
 
 bot.polling()
+
