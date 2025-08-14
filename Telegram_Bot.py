@@ -24,7 +24,6 @@ class Task:
         self.deaddate=deaddate
         self.done_time = None  # زمان انجام شدن
         if deaddate != "امشب ساعت 24:00":
-            
             if deaddate.strip().startswith("14"):
                 # 👇 فرض می‌کنیم فرمت ورودی شمسیه: YYYY/MM/DD HH:MM
                 jalali_dt = jdatetime.datetime.strptime(deaddate, "%Y/%m/%d %H:%M")
@@ -37,9 +36,9 @@ class Task:
                 self.deaddate = jalali_dt.strftime("%Y/%m/%d %H:%M")
             else: 
                 if "موعد تویحل وارده صحیح نبوده" in deaddate:
-                    self.deaddate = deaddate + "    "+ ":فرمت موعد تویحل وارده صحیح نبوده و با فرمت معمولی ذخیره شده فرمت درست\n YYYY/MM/DD HH:MM میباشد"  # اگر خطا باشه، همون ورودی ذخیره می‌شه
+                    self.deaddate = deaddate
                 else:
-                    self.deaddate=deaddate
+                    self.deaddate=deaddate +"    "+ ":فرمت موعد تویحل وارده صحیح نبوده و با فرمت معمولی ذخیره شده فرمت درست\n YYYY/MM/DD HH:MM میباشد"
     
     def to_dict(self):
         return {
