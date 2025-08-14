@@ -587,7 +587,7 @@ if __name__ == '__main__':
     time.sleep(1)
     
     # تنظیم وب‌هوک جدید
-    WEBHOOK_URL = f'https://YOUR_RENDER_URL.onrender.com/{TOKEN}'
+    WEBHOOK_URL = f'https://greentick-bot.onrender.com/{TOKEN}'
     bot.set_webhook(url=WEBHOOK_URL)
     
     # شروع threadهای کمکی
@@ -601,5 +601,6 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
+
 
 
