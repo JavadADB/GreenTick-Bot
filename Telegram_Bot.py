@@ -36,7 +36,8 @@ class Task:
                     jalali_dt = jdatetime.datetime.fromgregorian(datetime=gregorian_dt)
                     self.deaddate = jalali_dt.strftime("%Y/%m/%d %H:%M")
             except Exception as e:
-                self.deaddate = deaddate + "    "+ ":فرمت موعد تویحل وارده صحیح نبوده و با فرمت معمولی ذخیره شده فرمت درست\n YYYY/MM/DD HH:MM میباشد"  # اگر خطا باشه، همون ورودی ذخیره می‌شه
+                if "موعد تویحل وارده صحیح نبوده" in deaddate:
+                    self.deaddate = deaddate + "    "+ ":فرمت موعد تویحل وارده صحیح نبوده و با فرمت معمولی ذخیره شده فرمت درست\n YYYY/MM/DD HH:MM میباشد"  # اگر خطا باشه، همون ورودی ذخیره می‌شه
     def to_dict(self):
         return {
             "component": self.component,
@@ -601,6 +602,5 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
-
 
 
