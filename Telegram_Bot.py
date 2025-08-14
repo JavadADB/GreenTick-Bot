@@ -10,8 +10,8 @@ from flask import Flask, request
 import telegram
 #----------------------------------------------------------------------------------------------
 DATA_FILE = "notes.json"
-API_KEY="7907189917:AAHl9-VZggOEel72TLaF8faPlJd_Xq1Th6I"
-bot=telebot.TeleBot(API_KEY)
+TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+bot=telebot.TeleBot(TOKEN)
 #---------------------------------------------------------------------------------------------
 class Task:
     def __init__(self, component, name, description, situation, deaddate, setdate):
@@ -568,4 +568,5 @@ def reset_daily(message):
         print(f"❌ خطا در ریست کردن تسک های روزانه برای ")
 
 bot.polling()
+
 
