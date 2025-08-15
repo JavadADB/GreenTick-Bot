@@ -236,6 +236,118 @@ def test_github_save(message):
 
 
 #-------------------------------------------------------------------------------------------------------
+import os
+import json
+import base64
+import requests
+from dotenv import load_dotenv
+
+# بارگذاری متغیرها از محیط یا فایل .env
+load_dotenv()
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+REPO = "JavadADB/GreenTick-Bot"
+BRANCH = "main"
+FILE_PATH = "notes.json"
+
+# 📤 ذخیره‌سازی داده‌ها در GitHub
+def upload_to_github(content_json: str) -> bool:
+    url = f"https://api.github.com/repos/{REPO}/contents/{FILE_PATH}"
+    headers = {
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    # مرحله ۱: گرفتن SHA فایل (اگر وجود دارد)
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        sha = response.json().get("sha")
+    except requests.exceptions.RequestException:
+        sha = None
+
+    # مرحله ۲: آماده‌سازی داده‌ها
+    encoded_content = base64.b64encode(content_json.encode("utf-8")).decode("utf-8")
+    payload = {
+        "message": "Update notes.json via bot",
+        "content": encoded_content,
+        "branch": BRANCH
+    }
+    if sha:
+        payload["sha"] = sha
+
+    # مرحله ۳: ارسال درخواست PUT
+    try:
+        r = requests.put(url, headers=headers, json=payload)
+        r.raise_for_status()
+        return r.status_code in [200, 201]
+    except requests.exceptions.RequestException:
+        return False
+
+# 🧠 هندلر ذخیره‌سازی
+@bot.message_handler(commands=["save"])
+def save_all(message):
+    serializable_data = {
+        "tasks": {
+            user_id: [task.to_dict() for task in task_list]
+            for user_id, task_list in user_tasks.items()
+        },
+        "daily": {
+            user_id: [daily.to_dict() for daily in daily_list]
+            for user_id, daily_list in user_daily.items()
+        },
+        "reminders": user_reminders,
+        "last_sent": last_sent_minute
+    }
+
+    json_str = json.dumps(serializable_data, ensure_ascii=False, indent=2)
+    success = upload_to_github(json_str)
+
+    if success:
+        bot.reply_to(message, "✅ داده‌ها با موفقیت در GitHub ذخیره شدند.")
+    else:
+        bot.reply_to(message, "❌ خطا در ذخیره‌سازی در GitHub.")
+
+# 📥 بارگذاری داده‌ها از GitHub
+def download_from_github():
+    url = f"https://api.github.com/repos/{REPO}/contents/{FILE_PATH}"
+    headers = {
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    try:
+        r = requests.get(url, headers=headers)
+        r.raise_for_status()
+        content = r.json().get("content")
+        decoded = base64.b64decode(content).decode("utf-8")
+        return json.loads(decoded)
+    except requests.exceptions.RequestException:
+        return None
+
+# 🧠 هندلر بارگذاری
+@bot.message_handler(commands=["load"])
+def load_all(message):
+    global user_tasks, user_daily, user_reminders, last_sent_minute
+
+    raw = download_from_github()
+    if raw is None:
+        bot.reply_to(message, "❌ فایل notes.json در GitHub پیدا نشد.")
+        return
+
+    user_tasks = {
+        user_id: [Task(**{k: v for k, v in task_dict.items() if k != "done_time"}) for task_dict in task_list]
+        for user_id, task_list in raw.get("tasks", {}).items()
+    }
+
+    user_daily = {
+        user_id: [Daily(**{k: v for k, v in daily_dict.items() if k != "done_time"}) for daily_dict in daily_list]
+        for user_id, daily_list in raw.get("daily", {}).items()
+    }
+
+    user_reminders = raw.get("reminders", {})
+    last_sent_minute = raw.get("last_sent", {})
+
+    bot.reply_to(message, "📥 داده‌ها با موفقیت از GitHub بارگذاری شدند.")
 
 #-------------------------------------------------------------------------------------------------------
 @bot.message_handler(commands=["showtasks"])
@@ -593,6 +705,7 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
+
 
 
 
