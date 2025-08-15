@@ -702,8 +702,9 @@ def show_work_report(message):
                 report += f"  ⬅️ خروج: {records['out']}\n"
 
             if 'duration' in records:
+                duration_raw = records['duration']
                 duration_str = records['duration']
-                if isinstance(duration_str, str) and ':' in duration_str:
+                if ':' in duration_str:
                     try:
                         hours, minutes = map(int, duration_str.split(':'))
                         total_hours += hours
