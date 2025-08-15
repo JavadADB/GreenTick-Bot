@@ -677,22 +677,33 @@ def show_work_report(message):
         report = "📊 گزارش ساعت کاری شما:\n\n"
         for date, records in sorted(work_hours[user_id].items(), reverse=True):
             report += f"📅 {date}:\n"
+            
             if 'in' in records:
                 report += f"  ➡️ ورود: {records['in']}\n"
+            
             if 'out' in records:
                 report += f"  ⬅️ خروج: {records['out']}\n"
+            
             if 'duration' in records:
-                duration = records['duration']
-                if ':' in duration:
-                    hours, minutes = map(int, duration.split(':'))
-                    report += f"  ⏳ مدت کار: {hours} ساعت و {minutes} دقیقه\n"
-                else:
-                    report += f"  ⏳ مدت کار: {duration}\n"
+                try:
+                    # روش امن برای پردازش duration
+                    if isinstance(records['duration'], str) and ':' in records['duration']:
+                        hours, minutes = records['duration'].split(':')[:2]  # فقط 2 بخش اول را بگیر
+                        hours = int(hours)
+                        minutes = int(minutes)
+                        report += f"  ⏳ مدت کار: {hours} ساعت و {minutes} دقیقه\n"
+                    else:
+                        report += f"  ⏳ مدت کار: {records['duration']}\n"
+                except Exception as e:
+                    print(f"Error processing duration: {e}")
+                    report += "  ⏳ مدت کار: نامشخص\n"
+            
             report += "\n"
         
         bot.reply_to(message, report)
     except Exception as e:
         bot.reply_to(message, f"❌ خطا در تولید گزارش: {str(e)}")
+        print(f"Full error in report: {e}")
 
 #-------------------------------------------------------------------------------------------------------
 def reminder_loop():
