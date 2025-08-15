@@ -201,28 +201,40 @@ BRANCH = "main"
 FILE_PATH = "test.txt"
 @bot.message_handler(commands=["testsave"])
 def test_github_save(message):
-    bot.reply_to(message, f"✅ تسک روزانه ذخیره شد:\n")
-    print("fuck this life")
-    print("Status Code:", r.status_code)
-    print("Response:", r.json())
+    import requests
+    import base64
 
+    # 🔐 اطلاعات مورد نیاز
+    GITHUB_TOKEN = "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"  # توکن شخصی GitHub
+    REPO = "JavadADB/GreenTick-Bot"      # نام مخزن
+    BRANCH = "main"                     # شاخه مورد نظر
+    FILE_PATH = "hello.txt"             # مسیر فایل در مخزن
+    LOCAL_CONTENT = "سلام از پایتون"
+
+    # 📦 آماده‌سازی درخواست
     url = f"https://api.github.com/repos/{REPO}/contents/{FILE_PATH}"
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github.v3+json"
     }
-    content = base64.b64encode("Hello from bot!".encode()).decode()
+    content = base64.b64encode(LOCAL_CONTENT.encode()).decode()
     data = {
-        "message": "Test file upload",
+        "message": "افزودن فایل جدید با پایتون",
         "content": content,
         "branch": BRANCH
     }
+
+    # 📤 ارسال درخواست
     response = requests.put(url, headers=headers, json=data)
 
+    # 📊 بررسی نتیجه
     if response.status_code in [200, 201]:
-        bot.reply_to(message, "✅ فایل تست با موفقیت در GitHub ذخیره شد.")
+        print("✅ فایل با موفقیت در GitHub ذخیره شد.")
+        print("🔗 لینک فایل:", response.json()["content"]["html_url"])
     else:
-        bot.reply_to(message, f"❌ خطا در ذخیره‌سازی: {response.status_code}\n{response.text}")
+        print("❌ خطا در ذخیره‌سازی:", response.status_code)
+        print(response.text)
+
 
 #-------------------------------------------------------------------------------------------------------
 
@@ -582,6 +594,7 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
+
 
 
 
