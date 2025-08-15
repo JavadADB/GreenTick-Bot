@@ -5,3 +5,5 @@ gunicorn==21.2.0
 pyTelegramBotAPI
 jdatetime
 tzdata
+python-dotenv
+
