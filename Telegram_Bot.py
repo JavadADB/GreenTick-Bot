@@ -200,7 +200,7 @@ def test_github_save(message):
     import requests
     import base64
 
-    GITHUB_TOKEN = "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"
+    GITHUB_TOKEN = "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"
     REPO = "JavadADB/GreenTick-Bot"
     BRANCH = "main"
     FILE_PATH = "hello.txt"
@@ -590,6 +590,7 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
+
 
 
 
