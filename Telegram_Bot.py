@@ -329,7 +329,7 @@ def download_from_github():
 # 🧠 هندلر بارگذاری
 @bot.message_handler(commands=["load"])
 def load_all(message):
-    global user_tasks, user_daily, user_reminders, last_sent_minute
+    global user_tasks, user_daily, user_reminders, last_sent_minute,work_hours
 
     raw = download_from_github()
     if raw is None:
@@ -609,7 +609,7 @@ def record_in(message):
         work_hours[user_id][today]['in'] = in_time.strftime('%H:%M')
         
         # ذخیره در فایل
-        save_data()
+        save_all()
         
         bot.reply_to(message, f"✅ ورود شما در ساعت {time_str} ثبت شد")
     except (IndexError, ValueError):
@@ -642,7 +642,7 @@ def record_out(message):
         work_hours[user_id][today]['duration'] = str(duration)
         
         # ذخیره در فایل
-        save_data()
+        save_all
         
         # نمایش نتیجه
         total_hours = duration.seconds // 3600
@@ -694,26 +694,6 @@ def show_work_report(message):
     except Exception as e:
         bot.reply_to(message, f"❌ خطا در تولید گزارش: {str(e)}")
 
-# -----------------------------------------------------------------
-# در تابع save_data() این خطوط را اضافه کنید:
-def save_data():
-    # ... کدهای قبلی ...
-    
-    # ذخیره داده‌های ساعت کار
-    serializable_data['work_hours'] = work_hours
-    
-    # ... بقیه کدهای ذخیره‌سازی ...
-
-# -----------------------------------------------------------------
-# در تابع load_all() این خطوط را اضافه کنید:
-def load_all(message):
-    global work_hours
-    # ... کدهای قبلی ...
-    
-    # بارگذاری داده‌های ساعت کار
-    work_hours = raw.get('work_hours', {})
-    
-    # ... بقیه کدهای بارگذاری ...
 #-------------------------------------------------------------------------------------------------------
 def reminder_loop():
     last_sent_minute = {}
