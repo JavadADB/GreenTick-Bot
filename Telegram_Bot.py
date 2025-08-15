@@ -618,44 +618,6 @@ def record_in(message):
         bot.reply_to(message, f"❌ خطا: {str(e)}")
 
 # -----------------------------------------------------------------
-@bot.message_handler(commands=['out'])
-def record_out(message):
-    try:
-        user_id = str(message.from_user.id)
-        today = datetime.now(ZoneInfo("Asia/Tehran")).strftime('%Y-%m-%d')
-        time_str = message.text.split()[1]
-        
-        # اعتبارسنجی زمان
-        out_time = datetime.strptime(time_str, '%H:%M').time()
-        
-        # بررسی وجود رکورد ورود
-        if user_id not in work_hours or today not in work_hours[user_id] or 'in' not in work_hours[user_id][today]:
-            bot.reply_to(message, "⚠️ ابتدا باید ورود خود را ثبت کنید (/in)")
-            return
-        
-        # ذخیره زمان خروج
-        work_hours[user_id][today]['out'] = out_time.strftime('%H:%M')
-        
-        # محاسبه مدت کار
-        in_time = datetime.strptime(work_hours[user_id][today]['in'], '%H:%M').time()
-        duration = calculate_work_duration(in_time, out_time)
-        work_hours[user_id][today]['duration'] = str(duration)
-        
-        # ذخیره در فایل
-        save_all(message)
-        
-        # نمایش نتیجه
-        total_hours = duration.seconds // 3600
-        total_minutes = (duration.seconds % 3600) // 60
-        bot.reply_to(message, f"✅ خروج شما ثبت شد\n"
-                             f"⏳ مدت کار امروز: {total_hours} ساعت و {total_minutes} دقیقه\n"
-                             f"🕒 از {in_time.strftime('%H:%M')} تا {out_time.strftime('%H:%M')}")
-    except (IndexError, ValueError):
-        bot.reply_to(message, "⚠️ فرمت صحیح:\n/out 16:30")
-    except Exception as e:
-        bot.reply_to(message, f"❌ خطا: {str(e)}")
-
-# -----------------------------------------------------------------
 def calculate_work_duration(in_time, out_time):
     in_dt = datetime.combine(datetime.today(), in_time)
     out_dt = datetime.combine(datetime.today(), out_time)
@@ -663,7 +625,51 @@ def calculate_work_duration(in_time, out_time):
     if out_time < in_time:
         out_dt += timedelta(days=1)
     
-    return out_dt - in_dt
+    duration = out_dt - in_dt
+    total_seconds = duration.total_seconds()
+    hours = int(total_seconds // 3600)
+    minutes = int((total_seconds % 3600) // 60)
+    return hours, minutes  # بازگشت به صورت tuple
+
+@bot.message_handler(commands=['out'])
+def record_out(message):
+    try:
+        user_id = str(message.from_user.id)
+        today = datetime.now(ZoneInfo("Asia/Tehran")).strftime('%Y-%m-%d')
+        time_str = message.text.split()[1]
+        out_time = datetime.strptime(time_str, '%H:%M').time()
+
+        # بررسی رکورد موجود
+        if user_id not in work_hours or today not in work_hours[user_id] or 'in' not in work_hours[user_id][today]:
+            bot.reply_to(message, "⚠️ ابتدا باید ورود خود را ثبت کنید (/in)")
+            return
+
+        # محاسبه مدت کار
+        in_time = datetime.strptime(work_hours[user_id][today]['in'], '%H:%M').time()
+        hours, minutes = calculate_work_duration(in_time, out_time)
+        
+        # ذخیره اطلاعات
+        work_hours[user_id][today]['out'] = out_time.strftime('%H:%M')
+        work_hours[user_id][today]['duration'] = f"{hours:02d}:{minutes:02d}"
+        
+        # محاسبه و ذخیره مجموع ساعات
+        if 'total_hours' not in work_hours[user_id]:
+            work_hours[user_id]['total_hours'] = 0
+            work_hours[user_id]['total_minutes'] = 0
+        
+        work_hours[user_id]['total_hours'] += hours
+        work_hours[user_id]['total_minutes'] += minutes
+        
+        # نرمالایز کردن زمان
+        extra_hours = work_hours[user_id]['total_minutes'] // 60
+        work_hours[user_id]['total_hours'] += extra_hours
+        work_hours[user_id]['total_minutes'] %= 60
+        
+        save_all(message)
+        
+        bot.reply_to(message, f"✅ خروج ثبت شد\nمدت کار امروز: {hours} ساعت و {minutes} دقیقه")
+    except Exception as e:
+        bot.reply_to(message, f"❌ خطا: {str(e)}")
 
 # -----------------------------------------------------------------
 @bot.message_handler(commands=['report'])
@@ -675,8 +681,16 @@ def show_work_report(message):
             return
         
         report = "📊 گزارش ساعت کاری شما:\n\n"
-        for date, records in sorted(work_hours[user_id].items(), reverse=True):
-            report += f"📅 {date}:\n"
+        total_hours = 0
+        total_minutes = 0
+        
+        for date_str, records in sorted(work_hours[user_id].items(), reverse=True):
+            # تبدیل تاریخ میلادی به شمسی
+            year, month, day = map(int, date_str.split('-'))
+            jalali_date = jdate.fromgregorian(year=year, month=month, day=day)
+            formatted_date = jalali_date.strftime("%Y/%m/%d")
+            
+            report += f"📅 {formatted_date}:\n"
             
             if 'in' in records:
                 report += f"  ➡️ ورود: {records['in']}\n"
@@ -686,25 +700,24 @@ def show_work_report(message):
             
             if 'duration' in records:
                 try:
-                    # روش امن برای پردازش duration
-                    if isinstance(records['duration'], str) and ':' in records['duration']:
-                        hours, minutes = records['duration'].split(':')[:2]  # فقط 2 بخش اول را بگیر
-                        hours = int(hours)
-                        minutes = int(minutes)
+                    if ':' in records['duration']:
+                        hours, minutes = map(int, records['duration'].split(':'))
+                        total_hours += hours
+                        total_minutes += minutes
                         report += f"  ⏳ مدت کار: {hours} ساعت و {minutes} دقیقه\n"
-                    else:
-                        report += f"  ⏳ مدت کار: {records['duration']}\n"
                 except Exception as e:
                     print(f"Error processing duration: {e}")
-                    report += "  ⏳ مدت کار: نامشخص\n"
             
             report += "\n"
+        
+        # محاسبه مجموع ساعات کاری
+        total_hours += total_minutes // 60
+        total_minutes = total_minutes % 60
+        report += f"🔴 مجموع کل ساعت کاری: {total_hours} ساعت و {total_minutes} دقیقه\n"
         
         bot.reply_to(message, report)
     except Exception as e:
         bot.reply_to(message, f"❌ خطا در تولید گزارش: {str(e)}")
-        print(f"Full error in report: {e}")
-
 #-------------------------------------------------------------------------------------------------------
 def reminder_loop():
     last_sent_minute = {}
