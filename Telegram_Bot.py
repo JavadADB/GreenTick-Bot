@@ -681,51 +681,30 @@ def show_work_report(message):
             bot.reply_to(message, "📭 هیچ رکورد کاری یافت نشد")
             return
 
-        report = "📊 گزارش ساعت کاری شما:\n\n"
         total_hours = 0
         total_minutes = 0
 
-        for date_str, records in sorted(work_hours[user_id].items(), reverse=True):
-            try:
-                year, month, day = map(int, date_str.split('-'))
-                jalali_date = jdate.fromgregorian(year=year, month=month, day=day)
-                formatted_date = jalali_date.strftime("%Y/%m/%d")
-            except:
-                formatted_date = date_str  # اگر تبدیل شمسی شکست خورد
+        for records in work_hours[user_id].values():
+            duration_raw = records.get('duration')
+            duration_str = str(duration_raw)
 
-            report += f"📅 {formatted_date}:\n"
+            if ':' in duration_str:
+                try:
+                    hours, minutes = map(int, duration_str.split(':'))
+                    total_hours += hours
+                    total_minutes += minutes
+                except:
+                    continue  # اگر مقدار نامعتبر بود، ردش کن
 
-            if 'in' in records:
-                report += f"  ➡️ ورود: {records['in']}\n"
-
-            if 'out' in records:
-                report += f"  ⬅️ خروج: {records['out']}\n"
-
-            if 'duration' in records:
-                duration_raw = records['duration']
-                duration_str = records['duration']
-                if ':' in duration_str:
-                    try:
-                        hours, minutes = map(int, duration_str.split(':'))
-                        total_hours += hours
-                        total_minutes += minutes
-                        report += f"  ⏳ مدت کار: {hours} ساعت و {minutes} دقیقه\n"
-                    except ValueError:
-                        report += f"  ⚠️ مدت زمان نامعتبر: {duration_str}\n"
-                else:
-                    report += f"  ⚠️ مدت زمان نامعتبر: {duration_str}\n"
-
-            report += "\n"
-
-        # محاسبه مجموع
+        # تبدیل دقیقه‌های اضافی به ساعت
         total_hours += total_minutes // 60
         total_minutes = total_minutes % 60
-        report += f"🔴 مجموع کل ساعت کاری: {total_hours} ساعت و {total_minutes} دقیقه\n"
 
-        bot.reply_to(message, report)
+        bot.reply_to(message, f"🔢 مجموع ساعت کاری شما: {total_hours} ساعت و {total_minutes} دقیقه")
 
     except Exception as e:
         bot.reply_to(message, f"❌ خطا در تولید گزارش: {str(e)}")
+
 #-------------------------------------------------------------------------------------------------------
 def reminder_loop():
     last_sent_minute = {}
