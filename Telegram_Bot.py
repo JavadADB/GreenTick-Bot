@@ -199,12 +199,12 @@ GITHUB_TOKEN = "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"
 REPO = "JavadADB/GreenTick-Bot"
 BRANCH = "main"
 FILE_PATH = "test.txt"
-
 @bot.message_handler(commands=["testsave"])
 def test_github_save(message):
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
     r = requests.get("https://api.github.com/user", headers=headers)
-    bot.reply_to(message, f"✅ تسک روزانه ذخیره شد:\n {new_daily}")
+    bot.reply_to(message, f"✅ تسک روزانه ذخیره شد:\n")
+    print("fuck this life")
     print("Status Code:", r.status_code)
     print("Response:", r.json())
 
@@ -584,6 +584,7 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
+
 
 
 
