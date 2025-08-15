@@ -195,7 +195,7 @@ def adddaily(message):
 
 
 #---------------------------------------------------------------------------------------------------------
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")  # مطمئن شو توکن در محیط تنظیم شده
+GITHUB_TOKEN = "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"  # مطمئن شو توکن در محیط تنظیم شده
 REPO = "JavadADB/tasks-notes"
 BRANCH = "main"
 FILE_PATH = "test.txt"
@@ -221,7 +221,7 @@ def test_github_save(message):
         bot.reply_to(message, f"❌ خطا در ذخیره‌سازی: {response.status_code}\n{response.text}")
 
 #-------------------------------------------------------------------------------------------------------
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+GITHUB_TOKEN = "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"
 REPO = "JavadADB/tasks-notes"  # مثلاً jjdev/task-storage
 FILE_PATH = "notes.json"
 BRANCH = "main"
@@ -677,6 +677,7 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
+
 
 
 
