@@ -195,12 +195,15 @@ def adddaily(message):
 
 
 #---------------------------------------------------------------------------------------------------------
+###################################################
+##################################################
+#################################################
 @bot.message_handler(commands=["testsave"])
 def test_github_save(message):
     import requests
     import base64
 
-    GITHUB_TOKEN = "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"
+    GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
     REPO = "JavadADB/GreenTick-Bot"
     BRANCH = "main"
     FILE_PATH = "hello.txt"
@@ -590,6 +593,7 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
+
 
 
 
