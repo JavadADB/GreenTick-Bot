@@ -195,8 +195,8 @@ def adddaily(message):
 
 
 #---------------------------------------------------------------------------------------------------------
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-REPO = "JavadADB/tasks-notes"
+GITHUB_TOKEN = "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"
+REPO = "JavadADB/GreenTick-Bot"
 BRANCH = "main"
 FILE_PATH = "test.txt"
 
@@ -689,6 +689,7 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
+
 
 
 
