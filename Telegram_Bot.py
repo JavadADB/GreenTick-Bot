@@ -227,109 +227,6 @@ def test_github_save(message):
         bot.reply_to(message, f"❌ خطا در ذخیره‌سازی: {response.status_code}\n{response.text}")
 
 #-------------------------------------------------------------------------------------------------------
-FILE_PATH = "notes.json"
-BRANCH = "main"
-def upload_to_github(content_json):
-    url = f"https://api.github.com/repos/{REPO}/contents/{FILE_PATH}"
-    
-    headers = {
-        "Authorization": f"Bearer {GITHUB_TOKEN}",
-        "Content-Type": "application/json"
-    }
-
-    # مرحله ۱: گرفتن SHA فعلی فایل
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()  # اگر خطا بود، یک exception ایجاد کن
-        sha = response.json()["sha"]
-    except requests.exceptions.RequestException:
-        # اگر فایل وجود نداشت یا خطایی در گرفتن SHA بود، مقدار None رو برگردون
-        sha = None
-
-    # مرحله ۲: آماده‌سازی محتوا برای آپلود
-    encoded_content = base64.b64encode(content_json.encode("utf-8")).decode("utf-8")
-    
-    payload = {
-        "message": "Update notes.json via bot",
-        "content": encoded_content,
-        "branch": BRANCH
-    }
-    if sha:
-        payload["sha"] = sha
-    
-    # مرحله ۳: ارسال درخواست PUT برای آپدیت/ایجاد فایل
-    try:
-        r = requests.put(url, headers=headers, json=payload)
-        r.raise_for_status() # اگر خطا بود، یک exception ایجاد کن
-        return r.status_code in [200, 201]
-    except requests.exceptions.RequestException:
-        return False
-
-
-@bot.message_handler(commands=["save"])
-def save_all(message):
-    serializable_data = {
-        "tasks": {
-            user_id: [task.to_dict() for task in task_list]
-            for user_id, task_list in user_tasks.items()
-        },
-        "daily": {
-            user_id: [daily.to_dict() for daily in daily_list]
-            for user_id, daily_list in user_daily.items()
-        },
-        "reminders": user_reminders,
-        "last_sent": last_sent_minute
-    }
-
-    json_str = json.dumps(serializable_data, ensure_ascii=False, indent=2)
-    success = upload_to_github(json_str)
-    if success:
-        bot.reply_to(message, "✅ داده‌ها با موفقیت در GitHub ذخیره شدند.")
-    else:
-        bot.reply_to(message, "❌ خطا در ذخیره‌سازی در GitHub.")
-
-
-def download_from_github():
-    url = f"https://api.github.com/repos/{REPO}/contents/{FILE_PATH}"
-    
-    r = requests.get(url, headers={
-        "Authorization": f"Bearer {GITHUB_TOKEN}"
-    })
-    
-    if r.status_code == 200:
-        content = r.json()["content"]
-        decoded = base64.b64decode(content).decode()
-        return json.loads(decoded)
-    else:
-        return None
-
-
-@bot.message_handler(commands=["load"])
-def load_all(message):
-    global user_tasks, user_daily, user_reminders, last_sent_minute
-
-    raw = download_from_github()
-    if raw is None:
-        bot.reply_to(message, "❌ فایل notes.json در GitHub پیدا نشد.")
-        return
-
-    user_tasks = {
-        user_id: [Task(**{k: v for k, v in task_dict.items() if k != "done_time"}) for task_dict in task_list]
-        for user_id, task_list in raw.get("tasks", {}).items()
-    }
-
-    user_daily = {}
-    for user_id, daily_list in raw.get("daily", {}).items():
-        cleaned_list = []
-        for daily_dict in daily_list:
-            daily_dict.pop("done_time", None)
-            cleaned_list.append(Daily(**daily_dict))
-        user_daily[user_id] = cleaned_list
-
-    user_reminders = raw.get("reminders", {})
-    last_sent_minute = raw.get("last_sent", {})
-
-    bot.reply_to(message, "📥 داده‌ها با موفقیت از GitHub بارگذاری شدند.")
 
 #-------------------------------------------------------------------------------------------------------
 @bot.message_handler(commands=["showtasks"])
@@ -687,6 +584,7 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
+
 
 
 
