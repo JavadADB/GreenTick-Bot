@@ -204,7 +204,7 @@ FILE_PATH = "test.txt"
 def test_github_save(message):
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
     r = requests.get("https://api.github.com/user", headers=headers)
-
+    bot.reply_to(message, f"✅ تسک روزانه ذخیره شد:\n {new_daily}")
     print("Status Code:", r.status_code)
     print("Response:", r.json())
 
@@ -584,6 +584,7 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
+
 
 
 
