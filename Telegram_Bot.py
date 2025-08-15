@@ -266,13 +266,12 @@ def upload_to_github(content_json):
 def save_all(message):
     serializable_data = {
         "tasks": {
-                user_id: [task.to_dict() for task in task_list]
-                for user_id, task_list in user_tasks.items()
-},
+            user_id: [task.to_dict() for task in task_list]
+            for user_id, task_list in user_tasks.items()
         },
         "daily": {
-                user_id: [daily.to_dict() for daily in daily_list]
-                for user_id, daily_list in user_daily.items()
+            user_id: [daily.to_dict() for daily in daily_list]
+            for user_id, daily_list in user_daily.items()
         },
         "reminders": user_reminders,
         "last_sent": last_sent_minute
@@ -685,6 +684,7 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
+
 
 
 
