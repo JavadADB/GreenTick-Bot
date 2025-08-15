@@ -3,6 +3,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 import time
 import json
+import base64
 import os
 import threading
 import jdatetime
@@ -194,59 +195,105 @@ def adddaily(message):
 
 
 #---------------------------------------------------------------------------------------------------------
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+REPO = "JavadADB/tasks-notes"  # مثلاً jjdev/task-storage
+FILE_PATH = "notes.json"
+BRANCH = "main"
+
+def upload_to_github(content_json):
+    url = f"https://api.github.com/repos/{REPO}/contents/{FILE_PATH}"
+    
+    # بررسی وجود فایل برای گرفتن SHA
+    response = requests.get(url, headers={
+        "Authorization": f"Bearer {GITHUB_TOKEN}"
+    })
+    
+    sha = None
+    if response.status_code == 200:
+        sha = response.json()["sha"]
+    
+    encoded_content = base64.b64encode(content_json.encode()).decode()
+    
+    payload = {
+        "message": "update notes.json",
+        "content": encoded_content,
+        "branch": BRANCH
+    }
+    if sha:
+        payload["sha"] = sha
+
+    r = requests.put(url, headers={
+        "Authorization": f"Bearer {GITHUB_TOKEN}"
+    }, json=payload)
+
+    return r.status_code in [200, 201]
+
+
 @bot.message_handler(commands=["save"])
 def save_all(message):
     serializable_data = {
         "tasks": {
-            user_id: [task.to_dict() for task in task_list]
-            for user_id, task_list in user_tasks.items()
+            user_id: [task.to_dict() for task_list in user_tasks.values() for task in task_list]
+            for user_id in user_tasks
         },
         "daily": {
-            user_id: [daily.to_dict() for daily_list in user_daily.values() for daily in daily_list]
-            for user_id, daily_list in user_daily.items()
+            user_id: [daily.to_dict() for daily in user_daily.get(user_id, [])]
+            for user_id in user_daily
         },
         "reminders": user_reminders,
         "last_sent": last_sent_minute
     }
 
-    with open("notes.json", "w", encoding="utf-8") as f:
-        json.dump(serializable_data, f, ensure_ascii=False, indent=2)
+    json_str = json.dumps(serializable_data, ensure_ascii=False, indent=2)
+    success = upload_to_github(json_str)
 
-    bot.reply_to(message, "✅ همه‌ی داده‌ها ذخیره شدند از جمله یادآورها و تاریخ ارسال")
+    if success:
+        bot.reply_to(message, "✅ داده‌ها با موفقیت در GitHub ذخیره شدند.")
+    else:
+        bot.reply_to(message, "❌ خطا در ذخیره‌سازی در GitHub.")
+
+
+def download_from_github():
+    url = f"https://api.github.com/repos/{REPO}/contents/{FILE_PATH}"
+    
+    r = requests.get(url, headers={
+        "Authorization": f"Bearer {GITHUB_TOKEN}"
+    })
+    
+    if r.status_code == 200:
+        content = r.json()["content"]
+        decoded = base64.b64decode(content).decode()
+        return json.loads(decoded)
+    else:
+        return None
 
 
 @bot.message_handler(commands=["load"])
 def load_all(message):
     global user_tasks, user_daily, user_reminders, last_sent_minute
 
-    if not os.path.exists("notes.json"):
-        bot.reply_to(message, "❌ فایل ذخیره‌شده پیدا نشد.")
+    raw = download_from_github()
+    if raw is None:
+        bot.reply_to(message, "❌ فایل notes.json در GitHub پیدا نشد.")
         return
 
-    with open("notes.json", "r", encoding="utf-8") as f:
-        raw = json.load(f)
-
     user_tasks = {
-    user_id: [Task(**{k: v for k, v in task_dict.items() if k != "done_time"}) for task_dict in task_list]
-    for user_id, task_list in raw.get("tasks", {}).items()
-}
-
+        user_id: [Task(**{k: v for k, v in task_dict.items() if k != "done_time"}) for task_dict in task_list]
+        for user_id, task_list in raw.get("tasks", {}).items()
+    }
 
     user_daily = {}
     for user_id, daily_list in raw.get("daily", {}).items():
         cleaned_list = []
         for daily_dict in daily_list:
-            daily_dict.pop("done_time", None)  # حذف اگر وجود داشت
+            daily_dict.pop("done_time", None)
             cleaned_list.append(Daily(**daily_dict))
         user_daily[user_id] = cleaned_list
-
-
 
     user_reminders = raw.get("reminders", {})
     last_sent_minute = raw.get("last_sent", {})
 
-    bot.reply_to(message, "📥 همه‌ی داده‌ها بارگذاری شدند از جمله یادآورها و ارسال‌ها")
-
+    bot.reply_to(message, "📥 داده‌ها با موفقیت از GitHub بارگذاری شدند.")
 
 #-------------------------------------------------------------------------------------------------------
 @bot.message_handler(commands=["showtasks"])
@@ -604,5 +651,6 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
+
 
 
