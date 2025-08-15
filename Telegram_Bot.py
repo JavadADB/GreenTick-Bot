@@ -195,7 +195,7 @@ def adddaily(message):
 
 
 #---------------------------------------------------------------------------------------------------------
-GITHUB_TOKEN = "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"  # مطمئن شو توکن در محیط تنظیم شده
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 REPO = "JavadADB/tasks-notes"
 BRANCH = "main"
 FILE_PATH = "test.txt"
@@ -221,50 +221,58 @@ def test_github_save(message):
         bot.reply_to(message, f"❌ خطا در ذخیره‌سازی: {response.status_code}\n{response.text}")
 
 #-------------------------------------------------------------------------------------------------------
-GITHUB_TOKEN = "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"
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 REPO = "JavadADB/tasks-notes"  # مثلاً jjdev/task-storage
 FILE_PATH = "notes.json"
 BRANCH = "main"
-
 def upload_to_github(content_json):
     url = f"https://api.github.com/repos/{REPO}/contents/{FILE_PATH}"
     
-    # بررسی وجود فایل برای گرفتن SHA
-    response = requests.get(url, headers={
-        "Authorization": f"Bearer {GITHUB_TOKEN}"
-    })
-    
-    sha = None
-    if response.status_code == 200:
+    headers = {
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    # مرحله ۱: گرفتن SHA فعلی فایل
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()  # اگر خطا بود، یک exception ایجاد کن
         sha = response.json()["sha"]
-    
-    encoded_content = base64.b64encode(content_json.encode()).decode()
+    except requests.exceptions.RequestException:
+        # اگر فایل وجود نداشت یا خطایی در گرفتن SHA بود، مقدار None رو برگردون
+        sha = None
+
+    # مرحله ۲: آماده‌سازی محتوا برای آپلود
+    encoded_content = base64.b64encode(content_json.encode("utf-8")).decode("utf-8")
     
     payload = {
-        "message": "update notes.json",
+        "message": "Update notes.json via bot",
         "content": encoded_content,
         "branch": BRANCH
     }
     if sha:
         payload["sha"] = sha
-
-    r = requests.put(url, headers={
-        "Authorization": f"Bearer {GITHUB_TOKEN}"
-    }, json=payload)
-
-    return r.status_code in [200, 201]
+    
+    # مرحله ۳: ارسال درخواست PUT برای آپدیت/ایجاد فایل
+    try:
+        r = requests.put(url, headers=headers, json=payload)
+        r.raise_for_status() # اگر خطا بود، یک exception ایجاد کن
+        return r.status_code in [200, 201]
+    except requests.exceptions.RequestException:
+        return False
 
 
 @bot.message_handler(commands=["save"])
 def save_all(message):
     serializable_data = {
         "tasks": {
-            user_id: [task.to_dict() for task_list in user_tasks.values() for task in task_list]
-            for user_id in user_tasks
+                user_id: [task.to_dict() for task in task_list]
+                for user_id, task_list in user_tasks.items()
+},
         },
         "daily": {
-            user_id: [daily.to_dict() for daily in user_daily.get(user_id, [])]
-            for user_id in user_daily
+                user_id: [daily.to_dict() for daily in daily_list]
+                for user_id, daily_list in user_daily.items()
         },
         "reminders": user_reminders,
         "last_sent": last_sent_minute
@@ -677,6 +685,7 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
+
 
 
 
