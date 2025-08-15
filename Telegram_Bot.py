@@ -1,5 +1,5 @@
 import telebot
-from datetime import datetime
+from datetime import datetime,timedelta
 from zoneinfo import ZoneInfo
 import time
 import json
@@ -78,6 +78,7 @@ user_daily={}
 pending_deletions={}
 user_reminders={}
 last_sent_minute = {}
+work_hours = {}
 
 #-------------------------------------------------------------------------------------
 start_message = """
@@ -296,7 +297,8 @@ def save_all(message):
             for user_id, daily_list in user_daily.items()
         },
         "reminders": user_reminders,
-        "last_sent": last_sent_minute
+        "last_sent": last_sent_minute,
+        "work_hours": work_hours  # <-- اضافه کردن داده‌های ساعت کاری
     }
 
     json_str = json.dumps(serializable_data, ensure_ascii=False, indent=2)
@@ -346,6 +348,7 @@ def load_all(message):
 
     user_reminders = raw.get("reminders", {})
     last_sent_minute = raw.get("last_sent", {})
+    work_hours = raw.get("work_hours", {})  # <-- بارگذاری داده‌های ساعت کاری
 
     bot.reply_to(message, "📥 داده‌ها با موفقیت از GitHub بارگذاری شدند.")
 
@@ -584,6 +587,133 @@ def handle_pending_until(message):
         bot.send_message(user_id, f"📌 تسک‌های انجام‌نشده تا {date_text}:")
         for idx, task in enumerate(results, 1):
             bot.send_message(user_id, f"🔹 تسک شماره {idx}:\n{task}")
+#------------------------------------------------------------------------------------------------------
+
+@bot.message_handler(commands=['in'])
+def record_in(message):
+    try:
+        user_id = str(message.from_user.id)
+        today = datetime.now(ZoneInfo("Asia/Tehran")).strftime('%Y-%m-%d')
+        time_str = message.text.split()[1]
+        
+        # اعتبارسنجی زمان
+        in_time = datetime.strptime(time_str, '%H:%M').time()
+        
+        # ذخیره زمان ورود
+        if user_id not in work_hours:
+            work_hours[user_id] = {}
+        
+        if today not in work_hours[user_id]:
+            work_hours[user_id][today] = {}
+        
+        work_hours[user_id][today]['in'] = in_time.strftime('%H:%M')
+        
+        # ذخیره در فایل
+        save_data()
+        
+        bot.reply_to(message, f"✅ ورود شما در ساعت {time_str} ثبت شد")
+    except (IndexError, ValueError):
+        bot.reply_to(message, "⚠️ فرمت صحیح:\n/in 08:25")
+    except Exception as e:
+        bot.reply_to(message, f"❌ خطا: {str(e)}")
+
+# -----------------------------------------------------------------
+@bot.message_handler(commands=['out'])
+def record_out(message):
+    try:
+        user_id = str(message.from_user.id)
+        today = datetime.now(ZoneInfo("Asia/Tehran")).strftime('%Y-%m-%d')
+        time_str = message.text.split()[1]
+        
+        # اعتبارسنجی زمان
+        out_time = datetime.strptime(time_str, '%H:%M').time()
+        
+        # بررسی وجود رکورد ورود
+        if user_id not in work_hours or today not in work_hours[user_id] or 'in' not in work_hours[user_id][today]:
+            bot.reply_to(message, "⚠️ ابتدا باید ورود خود را ثبت کنید (/in)")
+            return
+        
+        # ذخیره زمان خروج
+        work_hours[user_id][today]['out'] = out_time.strftime('%H:%M')
+        
+        # محاسبه مدت کار
+        in_time = datetime.strptime(work_hours[user_id][today]['in'], '%H:%M').time()
+        duration = calculate_work_duration(in_time, out_time)
+        work_hours[user_id][today]['duration'] = str(duration)
+        
+        # ذخیره در فایل
+        save_data()
+        
+        # نمایش نتیجه
+        total_hours = duration.seconds // 3600
+        total_minutes = (duration.seconds % 3600) // 60
+        bot.reply_to(message, f"✅ خروج شما ثبت شد\n"
+                             f"⏳ مدت کار امروز: {total_hours} ساعت و {total_minutes} دقیقه\n"
+                             f"🕒 از {in_time.strftime('%H:%M')} تا {out_time.strftime('%H:%M')}")
+    except (IndexError, ValueError):
+        bot.reply_to(message, "⚠️ فرمت صحیح:\n/out 16:30")
+    except Exception as e:
+        bot.reply_to(message, f"❌ خطا: {str(e)}")
+
+# -----------------------------------------------------------------
+def calculate_work_duration(in_time, out_time):
+    in_dt = datetime.combine(datetime.today(), in_time)
+    out_dt = datetime.combine(datetime.today(), out_time)
+    
+    if out_time < in_time:
+        out_dt += timedelta(days=1)
+    
+    return out_dt - in_dt
+
+# -----------------------------------------------------------------
+@bot.message_handler(commands=['report'])
+def show_work_report(message):
+    try:
+        user_id = str(message.from_user.id)
+        if user_id not in work_hours or not work_hours[user_id]:
+            bot.reply_to(message, "📭 هیچ رکورد کاری یافت نشد")
+            return
+        
+        report = "📊 گزارش ساعت کاری شما:\n\n"
+        for date, records in sorted(work_hours[user_id].items(), reverse=True):
+            report += f"📅 {date}:\n"
+            if 'in' in records:
+                report += f"  ➡️ ورود: {records['in']}\n"
+            if 'out' in records:
+                report += f"  ⬅️ خروج: {records['out']}\n"
+            if 'duration' in records:
+                duration = records['duration']
+                if ':' in duration:
+                    hours, minutes = map(int, duration.split(':'))
+                    report += f"  ⏳ مدت کار: {hours} ساعت و {minutes} دقیقه\n"
+                else:
+                    report += f"  ⏳ مدت کار: {duration}\n"
+            report += "\n"
+        
+        bot.reply_to(message, report)
+    except Exception as e:
+        bot.reply_to(message, f"❌ خطا در تولید گزارش: {str(e)}")
+
+# -----------------------------------------------------------------
+# در تابع save_data() این خطوط را اضافه کنید:
+def save_data():
+    # ... کدهای قبلی ...
+    
+    # ذخیره داده‌های ساعت کار
+    serializable_data['work_hours'] = work_hours
+    
+    # ... بقیه کدهای ذخیره‌سازی ...
+
+# -----------------------------------------------------------------
+# در تابع load_all() این خطوط را اضافه کنید:
+def load_all(message):
+    global work_hours
+    # ... کدهای قبلی ...
+    
+    # بارگذاری داده‌های ساعت کار
+    work_hours = raw.get('work_hours', {})
+    
+    # ... بقیه کدهای بارگذاری ...
 #-------------------------------------------------------------------------------------------------------
 def reminder_loop():
     last_sent_minute = {}
@@ -705,24 +835,4 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
