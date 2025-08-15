@@ -195,15 +195,13 @@ def adddaily(message):
 
 
 #---------------------------------------------------------------------------------------------------------
-def test_github_save():
-    import requests
-    import base64
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")  # مطمئن شو توکن در محیط تنظیم شده
+REPO = "JavadADB/tasks-notes"
+BRANCH = "main"
+FILE_PATH = "test.txt"
 
-    GITHUB_TOKEN = "توکن_تو"
-    REPO = "JavadADB/tasks-notes"
-    BRANCH = "main"
-    FILE_PATH = "test.txt"
-
+@bot.message_handler(commands=["testsave"])
+def test_github_save(message):
     url = f"https://api.github.com/repos/{REPO}/contents/{FILE_PATH}"
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
@@ -216,13 +214,11 @@ def test_github_save():
         "branch": BRANCH
     }
     response = requests.put(url, headers=headers, json=data)
-    print("Status:", response.status_code)
-    print("Response:", response.text)
-def test_command(update, context):
-    test_github_save()
-    update.message.reply_text("تست ذخیره‌سازی انجام شد. نتیجه رو توی ترمینال ببین.")
 
-updater.dispatcher.add_handler(CommandHandler("test", test_command))
+    if response.status_code in [200, 201]:
+        bot.reply_to(message, "✅ فایل تست با موفقیت در GitHub ذخیره شد.")
+    else:
+        bot.reply_to(message, f"❌ خطا در ذخیره‌سازی: {response.status_code}\n{response.text}")
 
 #-------------------------------------------------------------------------------------------------------
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
@@ -681,6 +677,7 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
+
 
 
 
