@@ -1,29 +1,13 @@
 {
-  "tasks": {
-    "878259758": [
-      {
-        "component": "1",
-        "name": "23",
-        "description": "4",
-        "situation": "5",
-        "deaddate": "6    :فرمت موعد تویحل وارده صحیح نبوده و با فرمت معمولی ذخیره شده فرمت درست\n YYYY/MM/DD HH:MM میباشد",
-        "setdate": "2025-08-15 18:34:28",
-        "done_time": null
-      },
-      {
-        "component": "2",
-        "name": "3",
-        "description": "4",
-        "situation": "5",
-        "deaddate": "6    :فرمت موعد تویحل وارده صحیح نبوده و با فرمت معمولی ذخیره شده فرمت درست\n YYYY/MM/DD HH:MM میباشد",
-        "setdate": "2025-08-15 18:34:59",
-        "done_time": null
-      }
-    ]
-  },
+  "tasks": {},
   "daily": {},
-  "reminders": {
-    "878259758": "18:55"
-  },
-  "last_sent": {}
+  "reminders": {},
+  "last_sent": {},
+  "work_hours": {
+    "878259758": {
+      "2025-08-15": {
+        "in": "08:25"
+      }
+    }
+  }
 }
