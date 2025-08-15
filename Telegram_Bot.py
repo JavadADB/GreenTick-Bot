@@ -227,8 +227,6 @@ def test_github_save(message):
         bot.reply_to(message, f"❌ خطا در ذخیره‌سازی: {response.status_code}\n{response.text}")
 
 #-------------------------------------------------------------------------------------------------------
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-REPO = "JavadADB/tasks-notes"  # مثلاً jjdev/task-storage
 FILE_PATH = "notes.json"
 BRANCH = "main"
 def upload_to_github(content_json):
@@ -689,6 +687,7 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
+
 
 
 
