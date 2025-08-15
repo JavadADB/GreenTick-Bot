@@ -202,6 +202,12 @@ FILE_PATH = "test.txt"
 
 @bot.message_handler(commands=["testsave"])
 def test_github_save(message):
+headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+r = requests.get("https://api.github.com/user", headers=headers)
+
+print("Status Code:", r.status_code)
+print("Response:", r.json())
+
     url = f"https://api.github.com/repos/{REPO}/contents/{FILE_PATH}"
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
@@ -279,7 +285,6 @@ def save_all(message):
 
     json_str = json.dumps(serializable_data, ensure_ascii=False, indent=2)
     success = upload_to_github(json_str)
-
     if success:
         bot.reply_to(message, "✅ داده‌ها با موفقیت در GitHub ذخیره شدند.")
     else:
@@ -684,6 +689,7 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
+
 
 
 
