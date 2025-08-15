@@ -195,6 +195,36 @@ def adddaily(message):
 
 
 #---------------------------------------------------------------------------------------------------------
+def test_github_save():
+    import requests
+    import base64
+
+    GITHUB_TOKEN = "توکن_تو"
+    REPO = "JavadADB/tasks-notes"
+    BRANCH = "main"
+    FILE_PATH = "test.txt"
+
+    url = f"https://api.github.com/repos/{REPO}/contents/{FILE_PATH}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    content = base64.b64encode("Hello from bot!".encode()).decode()
+    data = {
+        "message": "Test file upload",
+        "content": content,
+        "branch": BRANCH
+    }
+    response = requests.put(url, headers=headers, json=data)
+    print("Status:", response.status_code)
+    print("Response:", response.text)
+def test_command(update, context):
+    test_github_save()
+    update.message.reply_text("تست ذخیره‌سازی انجام شد. نتیجه رو توی ترمینال ببین.")
+
+updater.dispatcher.add_handler(CommandHandler("test", test_command))
+
+#-------------------------------------------------------------------------------------------------------
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 REPO = "JavadADB/tasks-notes"  # مثلاً jjdev/task-storage
 FILE_PATH = "notes.json"
@@ -651,6 +681,7 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
+
 
 
 
