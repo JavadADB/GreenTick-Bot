@@ -195,23 +195,17 @@ def adddaily(message):
 
 
 #---------------------------------------------------------------------------------------------------------
-GITHUB_TOKEN = "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"
-REPO = "JavadADB/GreenTick-Bot"
-BRANCH = "main"
-FILE_PATH = "test.txt"
 @bot.message_handler(commands=["testsave"])
 def test_github_save(message):
     import requests
     import base64
 
-    # 🔐 اطلاعات مورد نیاز
-    GITHUB_TOKEN = "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"  # توکن شخصی GitHub
-    REPO = "JavadADB/GreenTick-Bot"      # نام مخزن
-    BRANCH = "main"                     # شاخه مورد نظر
-    FILE_PATH = "hello.txt"             # مسیر فایل در مخزن
+    GITHUB_TOKEN = "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"
+    REPO = "JavadADB/GreenTick-Bot"
+    BRANCH = "main"
+    FILE_PATH = "hello.txt"
     LOCAL_CONTENT = "سلام از پایتون"
 
-    # 📦 آماده‌سازی درخواست
     url = f"https://api.github.com/repos/{REPO}/contents/{FILE_PATH}"
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
@@ -224,16 +218,18 @@ def test_github_save(message):
         "branch": BRANCH
     }
 
-    # 📤 ارسال درخواست
+    # بررسی وجود فایل قبلی
+    get_resp = requests.get(url, headers=headers)
+    if get_resp.status_code == 200:
+        sha = get_resp.json()["sha"]
+        data["sha"] = sha
+
     response = requests.put(url, headers=headers, json=data)
 
-    # 📊 بررسی نتیجه
     if response.status_code in [200, 201]:
-        print("✅ فایل با موفقیت در GitHub ذخیره شد.")
-        print("🔗 لینک فایل:", response.json()["content"]["html_url"])
+        bot.reply_to(message, "✅ فایل با موفقیت در GitHub ذخیره شد.")
     else:
-        print("❌ خطا در ذخیره‌سازی:", response.status_code)
-        print(response.text)
+        bot.reply_to(message, f"❌ خطا در ذخیره‌سازی: {response.status_code}\n{response.text}")
 
 
 #-------------------------------------------------------------------------------------------------------
@@ -594,6 +590,7 @@ if __name__ == '__main__':
     
     # اجرای سرور Flask در thread اصلی
     run_flask()
+
 
 
 
