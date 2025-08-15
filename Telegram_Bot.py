@@ -609,7 +609,7 @@ def record_in(message):
         work_hours[user_id][today]['in'] = in_time.strftime('%H:%M')
         
         # ذخیره در فایل
-        save_all()
+        save_all(message)
         
         bot.reply_to(message, f"✅ ورود شما در ساعت {time_str} ثبت شد")
     except (IndexError, ValueError):
@@ -642,7 +642,7 @@ def record_out(message):
         work_hours[user_id][today]['duration'] = str(duration)
         
         # ذخیره در فایل
-        save_all
+        save_all(message)
         
         # نمایش نتیجه
         total_hours = duration.seconds // 3600
