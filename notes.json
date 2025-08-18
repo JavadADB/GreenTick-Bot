@@ -11,7 +11,10 @@
         "duration": "08:00"
       },
       "total_hours": 8,
-      "total_minutes": 0
+      "total_minutes": 0,
+      "2025-08-18": {
+        "in": "09:35"
+      }
     }
   }
 }
