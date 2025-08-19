@@ -7,11 +7,11 @@
     "878259758": {
       "2025-08-19": {
         "in": "09:30",
-        "out": "05:45",
-        "duration": "20:15"
+        "out": "17:45",
+        "duration": "08:15"
       },
-      "total_hours": 20,
-      "total_minutes": 15
+      "total_hours": 28,
+      "total_minutes": 30
     }
   }
 }
