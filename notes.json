@@ -11,7 +11,10 @@
         "duration": "03:50"
       },
       "total_hours": 3,
-      "total_minutes": 50
+      "total_minutes": 50,
+      "2025-09-07": {
+        "in": "13:50"
+      }
     }
   }
 }
