@@ -10,10 +10,12 @@
         "out": "14:30",
         "duration": "03:50"
       },
-      "total_hours": 3,
-      "total_minutes": 50,
+      "total_hours": 9,
+      "total_minutes": 25,
       "2025-09-07": {
-        "in": "13:50"
+        "in": "13:50",
+        "out": "19:25",
+        "duration": "05:35"
       }
     }
   }
