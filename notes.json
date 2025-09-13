@@ -40,15 +40,17 @@
         "out": "17:00",
         "duration": "02:35"
       },
-      "total_hours": 11,
-      "total_minutes": 50,
+      "total_hours": 14,
+      "total_minutes": 7,
       "2025-09-11": {
         "in": "14:35",
         "out": "19:25",
         "duration": "04:50"
       },
       "2025-09-13": {
-        "in": "14:37"
+        "in": "14:37",
+        "out": "16:54",
+        "duration": "02:17"
       }
     }
   }
